@@ -14,7 +14,7 @@ env:
   ################################################
 
 jobs:
-  setup-up-azure-resources:
+  setup-on-azure-resources:
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'spin up environment')
     steps:
@@ -29,7 +29,7 @@ jobs:
       - name: Create Azure resource group
         if: success()
         run: |
-          az group create --location ${{env.AZURE_LOCATION}} --name ${{env.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          az group create --location "${{env.AZURE_LOCATION}}" --name ${{env.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Create Azure app service plan
         if: success()
@@ -39,18 +39,16 @@ jobs:
       - name: Create webapp resource
         if: success()
         run: |
-          az webapp create --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --plan ${{ env.AZURE_APP_PLAN }} --name ${{ env.AZURE_WEBAPP_NAME }}  --container-image-name nginx --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          az webapp create --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --plan ${{ env.AZURE_APP_PLAN }} --name ${{ env.AZURE_WEBAPP_NAME }} --deployment-container-image-name nginx --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Configure webapp to use GHCR
         if: success()
         run: |
-          az webapp config container set --docker-image-name nginx --docker-registry-password ${{secrets.CR_PAT}} --docker-registry-url https://${{env.IMAGE_REGISTRY_URL}} --docker-registry-user ${{github.actor}} --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          az webapp config container set --docker-image-name nginx --docker-registry-password ${{secrets.CR_PAT}} --docker-registry-server-url https://${{env.IMAGE_REGISTRY_URL}} --docker-registry-username ${{github.actor}} --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
   destroy-azure-resources:
     runs-on: ubuntu-latest
-
     if: contains(github.event.pull_request.labels.*.name, 'destroy environment')
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
